@@ -124,6 +124,41 @@
           }
         }
       }
+    },
+    "ngxs-websocket-extension": {
+      "projectType": "library",
+      "root": "projects/ngxs-websocket-extension",
+      "sourceRoot": "projects/ngxs-websocket-extension/src",
+      "prefix": "lib",
+      "architect": {
+        "build": {
+          "builder": "@angular-devkit/build-ng-packagr:build",
+          "options": {
+            "tsConfig": "projects/ngxs-websocket-extension/tsconfig.lib.json",
+            "project": "projects/ngxs-websocket-extension/ng-package.json"
+          }
+        },
+        "test": {
+          "builder": "@angular-devkit/build-angular:karma",
+          "options": {
+            "main": "projects/ngxs-websocket-extension/src/test.ts",
+            "tsConfig": "projects/ngxs-websocket-extension/tsconfig.spec.json",
+            "karmaConfig": "projects/ngxs-websocket-extension/karma.conf.js"
+          }
+        },
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "projects/ngxs-websocket-extension/tsconfig.lib.json",
+              "projects/ngxs-websocket-extension/tsconfig.spec.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        }
+      }
     }},
   "defaultProject": "ng-libs"
 }

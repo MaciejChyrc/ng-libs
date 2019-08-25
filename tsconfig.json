@@ -17,7 +17,15 @@
     "lib": [
       "es2018",
       "dom"
-    ]
+    ],
+    "paths": {
+      "ngxs-websocket-extension": [
+        "dist/ngxs-websocket-extension"
+      ],
+      "ngxs-websocket-extension/*": [
+        "dist/ngxs-websocket-extension/*"
+      ]
+    }
   },
   "angularCompilerOptions": {
     "fullTemplateTypeCheck": true,
