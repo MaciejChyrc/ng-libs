@@ -6,6 +6,10 @@ export class ConnectWebSocket {
   constructor(public options: WebSocketOptions) {}
 }
 
+export class WebSocketConnected {
+  public static type = '[WebSocket] Connected';
+}
+
 export class DisconnectWebSocket {
   public static type = '[WebSocket] Disconnect';
 }
