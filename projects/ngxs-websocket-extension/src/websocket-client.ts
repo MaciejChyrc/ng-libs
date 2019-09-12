@@ -4,8 +4,8 @@ import { WebSocketOptions, NGXS_WEBSOCKET_OPTIONS } from './other';
 import {
   ConnectWebSocket,
   WebSocketConnected,
-  DisconnectWebSocket,
-  SendWebSocketMessage
+  SendWebSocketMessage,
+  WebSocketDisconnected
 } from './actions';
 
 // FIXME: introduce config field which stores things like serializer, deserializer etc. and set it from options
@@ -24,7 +24,10 @@ export class WebSocketClient {
   private setupActionListeners = () => {
     this.actions$
       .pipe(ofActionDispatched(ConnectWebSocket))
-      .subscribe(({ payload }) => this.connect(payload));
+      .subscribe(({ options }) => {
+        console.log(options);
+        this.connect(options);
+      });
 
     this.actions$
       .pipe(ofActionDispatched(SendWebSocketMessage))
@@ -59,7 +62,7 @@ export class WebSocketClient {
       });
 
       this.webSocket.addEventListener('close', event => {
-        this.store.dispatch(new DisconnectWebSocket());
+        this.store.dispatch(new WebSocketDisconnected());
       });
 
       this.webSocket.addEventListener('error', event => {});
