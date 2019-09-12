@@ -13,7 +13,7 @@
           "builder": "@angular-devkit/build-ng-packagr:build",
           "options": {
             "tsConfig": "projects/ngxs-websocket-extension/tsconfig.lib.json",
-            "project": "projects/ngxs-websocket-extension/ng-package.json"
+            "project": "projects/ngxs-websocket-extension/package.json"
           }
         },
         "test": {

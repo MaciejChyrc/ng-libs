@@ -1,7 +1,6 @@
 import { Injectable, Inject } from '@angular/core';
 import { Store, Actions, ofActionDispatched } from '@ngxs/store';
-import { WebSocketOptions } from './websocket-options';
-import { NGXS_WEBSOCKET_OPTIONS } from './ngxs-websocket-extension.module';
+import { WebSocketOptions, NGXS_WEBSOCKET_OPTIONS } from './other';
 import {
   ConnectWebSocket,
   WebSocketConnected,
@@ -29,7 +28,13 @@ export class WebSocketClient {
 
     this.actions$
       .pipe(ofActionDispatched(SendWebSocketMessage))
-      .subscribe(({ payload }) => this.send(payload));
+      .subscribe(({ payload }) => {
+        try {
+          this.send(payload);
+        } catch (error) {
+          console.error(error);
+        }
+      });
   }
 
   private setupWebSocketEventListeners = () => {
