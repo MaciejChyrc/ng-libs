@@ -1,4 +1,4 @@
-import { WebSocketOptions } from './other';
+import { WebSocketOptions, WebSocketDisconnectInfo } from './other';
 
 export class ConnectWebSocket {
   public static type = '[WebSocket] Connect';
@@ -16,6 +16,8 @@ export class DisconnectWebSocket {
 
 export class WebSocketDisconnected {
   public static type = '[WebSocket] Disconnected';
+
+  constructor(public payload: WebSocketDisconnectInfo) {}
 }
 
 export class SendWebSocketMessage {

@@ -12,4 +12,4 @@ export {
   DisconnectWebSocket,
   SendWebSocketMessage
 } from './actions';
-export { WebSocketOptions } from './other';
+export { WebSocketOptions, WebSocketDisconnectInfo } from './other';

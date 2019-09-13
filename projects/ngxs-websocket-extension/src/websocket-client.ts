@@ -8,26 +8,24 @@ import {
   WebSocketDisconnected
 } from './actions';
 
-// FIXME: introduce config field which stores things like serializer, deserializer etc. and set it from options
 @Injectable()
 export class WebSocketClient {
   private webSocket: WebSocket;
+  private config: WebSocketOptions;
 
   constructor(
     private store: Store,
     private actions$: Actions,
     @Inject(NGXS_WEBSOCKET_OPTIONS) private options: WebSocketOptions
   ) {
+    this.config = options;
     this.setupActionListeners();
   }
 
   private setupActionListeners = () => {
     this.actions$
       .pipe(ofActionDispatched(ConnectWebSocket))
-      .subscribe(({ options }) => {
-        console.log(options);
-        this.connect(options);
-      });
+      .subscribe(({ options }) => this.connect(options));
 
     this.actions$
       .pipe(ofActionDispatched(SendWebSocketMessage))
@@ -38,6 +36,12 @@ export class WebSocketClient {
           console.error(error);
         }
       });
+
+    this.actions$
+      .pipe(ofActionDispatched(WebSocketDisconnected))
+      .subscribe(_ => {
+        this.webSocket = null;
+      });
   }
 
   private setupWebSocketEventListeners = () => {
@@ -47,13 +51,13 @@ export class WebSocketClient {
       });
 
       this.webSocket.addEventListener('message', event => {
-        const message = this.options.deserializer(event);
+        const message = this.config.deserializer(event);
 
         if (message) {
-          const type = message[this.options.typeKey];
+          const type = message[this.config.typeKey];
           if (!type) {
             throw new Error(
-              `Type key ${this.options.typeKey} missing in the message`
+              `Type key ${this.config.typeKey} missing in the message`
             );
           } else {
             this.store.dispatch({ type, ...message });
@@ -62,7 +66,13 @@ export class WebSocketClient {
       });
 
       this.webSocket.addEventListener('close', event => {
-        this.store.dispatch(new WebSocketDisconnected());
+        this.store.dispatch(
+          new WebSocketDisconnected({
+            code: event.code,
+            clean: event.wasClean,
+            reason: event.reason
+          })
+        );
       });
 
       this.webSocket.addEventListener('error', event => {});
@@ -71,10 +81,10 @@ export class WebSocketClient {
 
   private connect(options?: WebSocketOptions) {
     if (options) {
-      this.options = { ...this.options, ...options };
+      this.config = { ...this.options, ...options };
     }
 
-    this.webSocket = new WebSocket(this.options.url, this.options.protocol);
+    this.webSocket = new WebSocket(this.config.url, this.config.protocol);
     this.setupWebSocketEventListeners();
   }
 
@@ -86,6 +96,6 @@ export class WebSocketClient {
       throw new Error('You must connect before you send a message');
     }
 
-    this.webSocket.send(this.options.serializer(message));
+    this.webSocket.send(this.config.serializer(message));
   }
 }

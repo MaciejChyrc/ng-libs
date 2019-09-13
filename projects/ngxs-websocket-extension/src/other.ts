@@ -13,6 +13,12 @@ export const NGXS_WEBSOCKET_OPTIONS = new InjectionToken(
   'NGXS_WEBSOCKET_OPTIONS'
 );
 
+export interface WebSocketDisconnectInfo {
+  code: number;
+  clean: boolean;
+  reason?: string;
+}
+
 export function noop(..._args: any[]) {
   return function() {};
 }
