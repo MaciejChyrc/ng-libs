@@ -19,6 +19,6 @@ export interface WebSocketDisconnectInfo {
   reason?: string;
 }
 
-export function noop(..._args: any[]) {
-  return function() {};
+export function noop(..._: any[]) {
+  return () => {};
 }

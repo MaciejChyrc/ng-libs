@@ -3,8 +3,11 @@ import { Actions, NgxsModule, ofActionDispatched, Store } from '@ngxs/store';
 import { Server, WebSocket } from 'mock-socket';
 import {
   ConnectWebSocket,
+  DisconnectWebSocket,
   SendWebSocketMessage,
-  WebSocketConnected
+  WebSocketConnected,
+  WebSocketDisconnected,
+  WebSocketError
 } from './actions';
 import { NgxsWebsocketExtensionModule } from './ngxs-websocket-extension.module';
 
@@ -33,6 +36,18 @@ describe('NgxsWebsocketExtension', () => {
     constructor(public payload: string) {}
   }
 
+  it('should connect websocket', done => {
+    const mockWebSocketServer = createModule();
+    const store = getStore();
+
+    mockWebSocketServer.on('connection', (socket: WebSocket) => {
+      expect(socket.readyState).toBe(1);
+      mockWebSocketServer.stop(done);
+    });
+
+    store.dispatch(new ConnectWebSocket({}));
+  });
+
   it('should dispatch action received from websocket', done => {
     const mockWebSocketServer = createModule();
     const store = getStore();
@@ -55,6 +70,83 @@ describe('NgxsWebsocketExtension', () => {
         })
       )
     );
+
+    store.dispatch(new ConnectWebSocket({}));
+  });
+
+  it('should disconnect websocket on DisconnectWebSocket action', done => {
+    const mockWebSocketServer = createModule();
+    const store = getStore();
+    const actions$ = getActions$();
+
+    actions$
+      .pipe(ofActionDispatched(WebSocketConnected))
+      .subscribe(() => store.dispatch(new DisconnectWebSocket()));
+    actions$
+      .pipe(ofActionDispatched(WebSocketDisconnected))
+      .subscribe(action => {
+        expect(action).toBeTruthy();
+        mockWebSocketServer.stop(done);
+      });
+
+    store.dispatch(new ConnectWebSocket({}));
+  });
+
+  it('should dispatch WebSocketDisconnected action when server closes the connection', done => {
+    const mockWebSocketServer = createModule();
+    const store = getStore();
+    const actions$ = getActions$();
+
+    mockWebSocketServer.on('connection', (socket: WebSocket) => socket.close());
+
+    actions$
+      .pipe(ofActionDispatched(WebSocketDisconnected))
+      .subscribe(action => {
+        expect(action).toBeTruthy();
+        mockWebSocketServer.stop(done);
+      });
+
+    store.dispatch(new ConnectWebSocket({}));
+  });
+
+  it('should dispatch WebSocketError action when server errors', done => {
+    const mockWebSocketServer = createModule();
+    const store = getStore();
+    const actions$ = getActions$();
+
+    mockWebSocketServer.on('connection', (socket: WebSocket) =>
+      mockWebSocketServer.emit('error', 'xd')
+    );
+
+    actions$.pipe(ofActionDispatched(WebSocketError)).subscribe(action => {
+      expect(action).toBeTruthy();
+      mockWebSocketServer.stop(done);
+    });
+
+    store.dispatch(new ConnectWebSocket({}));
+  });
+
+  it('should dispatch WebSocketDisconnected action after WebSocketError', done => {
+    const mockWebSocketServer = createModule();
+    const store = getStore();
+    const actions$ = getActions$();
+    let errorActionDispatched = 0;
+
+    mockWebSocketServer.on('connection', (socket: WebSocket) =>
+      mockWebSocketServer.emit('error', 'xd')
+    );
+
+    actions$
+      .pipe(ofActionDispatched(WebSocketError))
+      .subscribe(() => errorActionDispatched++);
+
+    actions$
+      .pipe(ofActionDispatched(WebSocketDisconnected))
+      .subscribe(action => {
+        expect(action).toBeTruthy();
+        expect(errorActionDispatched).toBe(1);
+        mockWebSocketServer.stop(done);
+      });
 
     store.dispatch(new ConnectWebSocket({}));
   });

@@ -25,3 +25,7 @@ export class SendWebSocketMessage {
 
   constructor(public payload: any) {}
 }
+
+export class WebSocketError {
+  public static type = '[WebSocket] Error';
+}

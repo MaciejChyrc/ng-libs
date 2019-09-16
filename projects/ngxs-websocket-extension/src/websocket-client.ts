@@ -2,9 +2,11 @@ import { Inject, Injectable } from '@angular/core';
 import { Actions, ofActionDispatched, Store } from '@ngxs/store';
 import {
   ConnectWebSocket,
+  DisconnectWebSocket,
   SendWebSocketMessage,
   WebSocketConnected,
-  WebSocketDisconnected
+  WebSocketDisconnected,
+  WebSocketError
 } from './actions';
 import { NGXS_WEBSOCKET_OPTIONS, WebSocketOptions } from './other';
 
@@ -37,11 +39,13 @@ export class WebSocketClient {
         }
       });
 
-    this.actions$
-      .pipe(ofActionDispatched(WebSocketDisconnected))
-      .subscribe(_ => {
-        this.webSocket = null;
-      });
+    this.actions$.pipe(ofActionDispatched(DisconnectWebSocket)).subscribe(_ => {
+      try {
+        this.disconnect();
+      } catch (error) {
+        console.error(error);
+      }
+    });
   }
 
   private setupWebSocketEventListeners = () => {
@@ -73,9 +77,14 @@ export class WebSocketClient {
             reason: event.reason
           })
         );
+
+        this.webSocket = null;
       });
 
-      this.webSocket.addEventListener('error', event => {});
+      this.webSocket.addEventListener('error', event => {
+        this.store.dispatch(new WebSocketError());
+        this.disconnect();
+      });
     }
   }
 
@@ -89,13 +98,21 @@ export class WebSocketClient {
   }
 
   private send(message: any) {
-    if (
-      !this.webSocket ||
-      (this.webSocket && this.webSocket.readyState !== 1) // readyState 1 stands for open connection
-    ) {
+    if (this.socketNotOpen) {
       throw new Error('You must connect before you send a message');
     }
 
     this.webSocket.send(this.config.serializer(message));
   }
+
+  private disconnect() {
+    if (this.socketNotOpen) {
+      throw new Error(`The socket isn't connected`);
+    }
+
+    this.webSocket.close();
+  }
+
+  private socketNotOpen = (): boolean =>
+    !this.webSocket || (this.webSocket && this.webSocket.readyState !== 1) // readyState 1 stands for open connection
 }
