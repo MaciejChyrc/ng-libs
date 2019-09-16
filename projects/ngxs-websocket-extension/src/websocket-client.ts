@@ -1,12 +1,12 @@
-import { Injectable, Inject } from '@angular/core';
-import { Store, Actions, ofActionDispatched } from '@ngxs/store';
-import { WebSocketOptions, NGXS_WEBSOCKET_OPTIONS } from './other';
+import { Inject, Injectable } from '@angular/core';
+import { Actions, ofActionDispatched, Store } from '@ngxs/store';
 import {
   ConnectWebSocket,
-  WebSocketConnected,
   SendWebSocketMessage,
+  WebSocketConnected,
   WebSocketDisconnected
 } from './actions';
+import { NGXS_WEBSOCKET_OPTIONS, WebSocketOptions } from './other';
 
 @Injectable()
 export class WebSocketClient {

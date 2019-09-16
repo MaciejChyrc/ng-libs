@@ -1,11 +1,11 @@
 import {
-  NgModule,
-  ModuleWithProviders,
   APP_INITIALIZER,
-  InjectionToken
+  InjectionToken,
+  ModuleWithProviders,
+  NgModule
 } from '@angular/core';
 import { NgxsModule } from '@ngxs/store';
-import { WebSocketOptions, NGXS_WEBSOCKET_OPTIONS, noop } from './other';
+import { NGXS_WEBSOCKET_OPTIONS, noop, WebSocketOptions } from './other';
 import { WebSocketClient } from './websocket-client';
 
 export function websocketOptionsFactory(

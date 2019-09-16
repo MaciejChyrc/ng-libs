@@ -1,4 +1,4 @@
-import { WebSocketOptions, WebSocketDisconnectInfo } from './other';
+import { WebSocketDisconnectInfo, WebSocketOptions } from './other';
 
 export class ConnectWebSocket {
   public static type = '[WebSocket] Connect';

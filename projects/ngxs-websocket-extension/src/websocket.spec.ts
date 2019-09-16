@@ -1,12 +1,12 @@
 import { TestBed } from '@angular/core/testing';
+import { Actions, NgxsModule, ofActionDispatched, Store } from '@ngxs/store';
 import { Server, WebSocket } from 'mock-socket';
-import { NgxsModule, Store, Actions, ofActionDispatched } from '@ngxs/store';
-import { NgxsWebsocketExtensionModule } from './ngxs-websocket-extension.module';
 import {
   ConnectWebSocket,
-  WebSocketConnected,
-  SendWebSocketMessage
+  SendWebSocketMessage,
+  WebSocketConnected
 } from './actions';
+import { NgxsWebsocketExtensionModule } from './ngxs-websocket-extension.module';
 
 type WebSocketMessage = string | Blob | ArrayBuffer | ArrayBufferView;
 
