@@ -70,15 +70,11 @@ export class WebSocketClient {
       });
 
       this.webSocket.addEventListener('close', event => {
-        this.store.dispatch(
-          new WebSocketDisconnected({
-            code: event.code,
-            clean: event.wasClean,
-            reason: event.reason
-          })
+        this.dispatchDisconnectedAndFinalizeSocket(
+          event.code,
+          event.wasClean,
+          event.reason
         );
-
-        this.webSocket = null;
       });
 
       this.webSocket.addEventListener('error', () => {
@@ -108,13 +104,26 @@ export class WebSocketClient {
   }
 
   private disconnect() {
-    if (
-      !this.webSocket ||
-      (this.webSocket && this.webSocket.readyState !== 1)
-    ) {
-      throw new Error(`The socket isn't connected`);
+    if (this.webSocket && this.webSocket.readyState === 1) {
+      this.webSocket.close();
+    } else {
+      throw new Error('There is no open websocket connection');
     }
+  }
 
-    this.webSocket.close();
+  private dispatchDisconnectedAndFinalizeSocket(
+    code: number,
+    clean: boolean,
+    reason?: string
+  ) {
+    this.store.dispatch(
+      new WebSocketDisconnected({
+        code,
+        clean,
+        reason
+      })
+    );
+
+    this.webSocket = null;
   }
 }
