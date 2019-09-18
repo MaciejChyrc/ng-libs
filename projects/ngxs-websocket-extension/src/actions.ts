@@ -3,7 +3,7 @@ import { WebSocketDisconnectInfo, WebSocketOptions } from './other';
 export class ConnectWebSocket {
   public static type = '[WebSocket] Connect';
 
-  constructor(public options: WebSocketOptions) {}
+  constructor(public options?: WebSocketOptions) {}
 }
 
 export class WebSocketConnected {

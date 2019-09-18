@@ -50,7 +50,7 @@ export class WebSocketClient {
 
   private setupWebSocketEventListeners = () => {
     if (this.webSocket) {
-      this.webSocket.addEventListener('open', event => {
+      this.webSocket.addEventListener('open', () => {
         this.store.dispatch(new WebSocketConnected());
       });
 
@@ -81,9 +81,8 @@ export class WebSocketClient {
         this.webSocket = null;
       });
 
-      this.webSocket.addEventListener('error', event => {
+      this.webSocket.addEventListener('error', () => {
         this.store.dispatch(new WebSocketError());
-        this.disconnect();
       });
     }
   }
@@ -98,7 +97,10 @@ export class WebSocketClient {
   }
 
   private send(message: any) {
-    if (this.socketNotOpen) {
+    if (
+      !this.webSocket ||
+      (this.webSocket && this.webSocket.readyState !== 1)
+    ) {
       throw new Error('You must connect before you send a message');
     }
 
@@ -106,13 +108,13 @@ export class WebSocketClient {
   }
 
   private disconnect() {
-    if (this.socketNotOpen) {
+    if (
+      !this.webSocket ||
+      (this.webSocket && this.webSocket.readyState !== 1)
+    ) {
       throw new Error(`The socket isn't connected`);
     }
 
     this.webSocket.close();
   }
-
-  private socketNotOpen = (): boolean =>
-    !this.webSocket || (this.webSocket && this.webSocket.readyState !== 1) // readyState 1 stands for open connection
 }

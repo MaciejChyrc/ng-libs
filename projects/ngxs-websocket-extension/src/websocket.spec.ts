@@ -45,7 +45,7 @@ describe('NgxsWebsocketExtension', () => {
       mockWebSocketServer.stop(done);
     });
 
-    store.dispatch(new ConnectWebSocket({}));
+    store.dispatch(new ConnectWebSocket());
   });
 
   it('should dispatch action received from websocket', done => {
@@ -71,7 +71,7 @@ describe('NgxsWebsocketExtension', () => {
       )
     );
 
-    store.dispatch(new ConnectWebSocket({}));
+    store.dispatch(new ConnectWebSocket());
   });
 
   it('should disconnect websocket on DisconnectWebSocket action', done => {
@@ -82,6 +82,7 @@ describe('NgxsWebsocketExtension', () => {
     actions$
       .pipe(ofActionDispatched(WebSocketConnected))
       .subscribe(() => store.dispatch(new DisconnectWebSocket()));
+
     actions$
       .pipe(ofActionDispatched(WebSocketDisconnected))
       .subscribe(action => {
@@ -89,7 +90,7 @@ describe('NgxsWebsocketExtension', () => {
         mockWebSocketServer.stop(done);
       });
 
-    store.dispatch(new ConnectWebSocket({}));
+    store.dispatch(new ConnectWebSocket());
   });
 
   it('should dispatch WebSocketDisconnected action when server closes the connection', done => {
@@ -106,7 +107,7 @@ describe('NgxsWebsocketExtension', () => {
         mockWebSocketServer.stop(done);
       });
 
-    store.dispatch(new ConnectWebSocket({}));
+    store.dispatch(new ConnectWebSocket());
   });
 
   it('should dispatch WebSocketError action when server errors', done => {
@@ -123,31 +124,6 @@ describe('NgxsWebsocketExtension', () => {
       mockWebSocketServer.stop(done);
     });
 
-    store.dispatch(new ConnectWebSocket({}));
-  });
-
-  it('should dispatch WebSocketDisconnected action after WebSocketError', done => {
-    const mockWebSocketServer = createModule();
-    const store = getStore();
-    const actions$ = getActions$();
-    let errorActionDispatched = 0;
-
-    mockWebSocketServer.on('connection', (socket: WebSocket) =>
-      mockWebSocketServer.emit('error', 'xd')
-    );
-
-    actions$
-      .pipe(ofActionDispatched(WebSocketError))
-      .subscribe(() => errorActionDispatched++);
-
-    actions$
-      .pipe(ofActionDispatched(WebSocketDisconnected))
-      .subscribe(action => {
-        expect(action).toBeTruthy();
-        expect(errorActionDispatched).toBe(1);
-        mockWebSocketServer.stop(done);
-      });
-
-    store.dispatch(new ConnectWebSocket({}));
+    store.dispatch(new ConnectWebSocket());
   });
 });
