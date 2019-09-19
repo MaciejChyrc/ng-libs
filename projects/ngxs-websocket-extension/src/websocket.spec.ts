@@ -10,6 +10,7 @@ import {
   WebSocketError
 } from './actions';
 import { NgxsWebsocketExtensionModule } from './ngxs-websocket-extension.module';
+import { WebSocketOptions } from './other';
 
 type WebSocketMessage = string | Blob | ArrayBuffer | ArrayBufferView;
 
@@ -19,11 +20,11 @@ describe('NgxsWebsocketExtension', () => {
   });
 
   const url = 'ws://localhost:8080';
-  const createModule = () => {
+  const createModule = (options?: WebSocketOptions) => {
     TestBed.configureTestingModule({
       imports: [
         NgxsModule.forRoot(),
-        NgxsWebsocketExtensionModule.forRoot({ url })
+        NgxsWebsocketExtensionModule.forRoot(options)
       ]
     });
 
@@ -37,7 +38,7 @@ describe('NgxsWebsocketExtension', () => {
   }
 
   it('should connect websocket', done => {
-    const mockWebSocketServer = createModule();
+    const mockWebSocketServer = createModule({ url });
     const store = getStore();
 
     mockWebSocketServer.on('connection', (socket: WebSocket) => {
@@ -49,7 +50,7 @@ describe('NgxsWebsocketExtension', () => {
   });
 
   it('should dispatch action received from websocket', done => {
-    const mockWebSocketServer = createModule();
+    const mockWebSocketServer = createModule({ url });
     const store = getStore();
     const actions$ = getActions$();
 
@@ -75,7 +76,7 @@ describe('NgxsWebsocketExtension', () => {
   });
 
   it('should disconnect websocket on DisconnectWebSocket action', done => {
-    const mockWebSocketServer = createModule();
+    const mockWebSocketServer = createModule({ url });
     const store = getStore();
     const actions$ = getActions$();
 
@@ -94,7 +95,7 @@ describe('NgxsWebsocketExtension', () => {
   });
 
   it('should dispatch WebSocketDisconnected action when server closes the connection', done => {
-    const mockWebSocketServer = createModule();
+    const mockWebSocketServer = createModule({ url });
     const store = getStore();
     const actions$ = getActions$();
 
@@ -111,7 +112,7 @@ describe('NgxsWebsocketExtension', () => {
   });
 
   it('should dispatch WebSocketError action when server errors', done => {
-    const mockWebSocketServer = createModule();
+    const mockWebSocketServer = createModule({ url });
     const store = getStore();
     const actions$ = getActions$();
 
@@ -123,6 +124,85 @@ describe('NgxsWebsocketExtension', () => {
       expect(action).toBeTruthy();
       mockWebSocketServer.stop(done);
     });
+
+    store.dispatch(new ConnectWebSocket());
+  });
+
+  it('should use options provided in module', done => {
+    const mockWebSocketServer = createModule({ url, serializer: () => '' });
+    const store = getStore();
+    const actions$ = getActions$();
+
+    mockWebSocketServer.on('connection', (socket: WebSocket) => {
+      socket.on('message', (message: WebSocketMessage) => {
+        expect(message).toEqual('');
+        mockWebSocketServer.stop(done);
+      });
+    });
+
+    actions$.pipe(ofActionDispatched(WebSocketConnected)).subscribe(() =>
+      store.dispatch(
+        new SendWebSocketMessage({
+          type: 'Example message',
+          payload: 'No elo'
+        })
+      )
+    );
+
+    store.dispatch(new ConnectWebSocket());
+  });
+
+  it(`should use options provided in ConnectWebSocket action's options`, done => {
+    const mockWebSocketServer = createModule({ url, serializer: () => '' });
+    const store = getStore();
+    const actions$ = getActions$();
+
+    mockWebSocketServer.on('connection', (socket: WebSocket) => {
+      socket.on('message', (message: WebSocketMessage) => {
+        expect(message).toEqual('Serializer from ConnectWebSocket options');
+        mockWebSocketServer.stop(done);
+      });
+    });
+
+    actions$.pipe(ofActionDispatched(WebSocketConnected)).subscribe(() =>
+      store.dispatch(
+        new SendWebSocketMessage({
+          type: 'Example message',
+          payload: 'No elo'
+        })
+      )
+    );
+
+    store.dispatch(
+      new ConnectWebSocket({
+        serializer: () => 'Serializer from ConnectWebSocket options'
+      })
+    );
+  });
+
+  it('should dispatch action received from websocket with custom typeKey', done => {
+    const mockWebSocketServer = createModule({ url, typeKey: 'xyz' });
+    const store = getStore();
+    const actions$ = getActions$();
+
+    mockWebSocketServer.on('connection', (socket: WebSocket) => {
+      socket.on('message', (message: WebSocketMessage) => socket.send(message));
+
+      actions$.pipe(ofActionDispatched(ExampleMessage)).subscribe(action => {
+        expect(action.type).toEqual('Example message');
+        expect(action.payload).toEqual('No elo');
+        mockWebSocketServer.stop(done);
+      });
+    });
+
+    actions$.pipe(ofActionDispatched(WebSocketConnected)).subscribe(() =>
+      store.dispatch(
+        new SendWebSocketMessage({
+          xyz: 'Example message',
+          payload: 'No elo'
+        })
+      )
+    );
 
     store.dispatch(new ConnectWebSocket());
   });
