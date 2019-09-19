@@ -14,8 +14,8 @@ export const NGXS_WEBSOCKET_OPTIONS = new InjectionToken(
 );
 
 export interface WebSocketDisconnectInfo {
-  code: number;
   clean: boolean;
+  code?: number;
   reason?: string;
 }
 

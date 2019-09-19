@@ -27,7 +27,14 @@ export class WebSocketClient {
   private setupActionListeners = () => {
     this.actions$
       .pipe(ofActionDispatched(ConnectWebSocket))
-      .subscribe(({ options }) => this.connect(options));
+      .subscribe(({ options }) => {
+        try {
+          this.connect(options);
+        } catch (error) {
+          console.error(error);
+          this.dispatchDisconnectedAndFinalizeSocket(false);
+        }
+      });
 
     this.actions$
       .pipe(ofActionDispatched(SendWebSocketMessage))
@@ -71,8 +78,8 @@ export class WebSocketClient {
 
       this.webSocket.addEventListener('close', event => {
         this.dispatchDisconnectedAndFinalizeSocket(
-          event.code,
           event.wasClean,
+          event.code,
           event.reason
         );
       });
@@ -80,6 +87,8 @@ export class WebSocketClient {
       this.webSocket.addEventListener('error', () => {
         this.store.dispatch(new WebSocketError());
       });
+    } else {
+      throw new Error('Failed to set up websocket event listeners');
     }
   }
 
@@ -112,14 +121,14 @@ export class WebSocketClient {
   }
 
   private dispatchDisconnectedAndFinalizeSocket(
-    code: number,
     clean: boolean,
+    code?: number,
     reason?: string
   ) {
     this.store.dispatch(
       new WebSocketDisconnected({
-        code,
         clean,
+        code,
         reason
       })
     );
