@@ -6,44 +6,44 @@ jobs:
     steps:
       - checkout
       - run:
-        name: Print branch
-        command: echo ${CIRCLE_BRANCH}
+          name: Print branch
+          command: echo ${CIRCLE_BRANCH}
       - restore_cache:
-        keys:
-          - v1-dependencies-{{ checksum "package-lock.json" }}
-          - v1-dependencies-
+          keys:
+            - v1-dependencies-{{ checksum "package-lock.json" }}
+            - v1-dependencies-
       - run:
-        name: Install dependencies
-        command: npm i
+          name: Install dependencies
+          command: npm i
       - save_cache:
-        key: v1-dependencies-{{ checksum "package-lock.json" }}
-        paths:
-          - node_modules
+          key: v1-dependencies-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
       - run:
-        name: Run tests
-        command: npm run test:coverage
+          name: Run tests
+          command: npm run test:coverage
   lint:
     docker:
       - image: circleci/node:10.16
     steps:
       - checkout
       - run:
-        name: Print branch
-        command: echo ${CIRCLE_BRANCH}
+          name: Print branch
+          command: echo ${CIRCLE_BRANCH}
       - restore_cache:
-        keys:
-          - v1-dependencies-{{ checksum "package-lock.json" }}
-          - v1-dependencies-
+          keys:
+            - v1-dependencies-{{ checksum "package-lock.json" }}
+            - v1-dependencies-
       - run:
-        name: Install dependencies
-        command: npm i
+          name: Install dependencies
+          command: npm i
       - save_cache:
-        key: v1-dependencies-{{ checksum "package-lock.json" }}
-        paths:
-          - node_modules
+          key: v1-dependencies-{{ checksum "package-lock.json" }}
+          paths:
+            - node_modules
       - run:
-        name: Run tests
-        command: npm run lint
+          name: Run tests
+          command: npm run lint
 workflows:
   version: 2
   tests:
