@@ -21,7 +21,7 @@ jobs:
             - node_modules
       - run:
           name: Run tests
-          command: npm run test:coverage
+          command: npm run test:ci
   lint:
     docker:
       - image: circleci/node:10.16

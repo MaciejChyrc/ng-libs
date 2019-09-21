@@ -22,6 +22,11 @@
             "main": "projects/ngxs-websocket-extension/src/test.ts",
             "tsConfig": "projects/ngxs-websocket-extension/tsconfig.spec.json",
             "karmaConfig": "projects/ngxs-websocket-extension/karma.conf.js"
+          },
+          "configurations": {
+            "ci": {
+              "karmaConfig": "projects/ngxs-websocket-extension/karma-ci.conf.js"
+            }
           }
         },
         "lint": {
