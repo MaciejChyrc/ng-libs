@@ -2,7 +2,7 @@ version: 2
 jobs:
   test:
     docker:
-      - image: circleci/node:10.16
+      - image: circleci/node:10.16-browsers
     steps:
       - checkout
       - run:
@@ -42,7 +42,7 @@ jobs:
           paths:
             - node_modules
       - run:
-          name: Run tests
+          name: Run linter
           command: npm run lint
 workflows:
   version: 2
