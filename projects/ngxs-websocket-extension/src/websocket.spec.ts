@@ -10,25 +10,24 @@ import {
   WebSocketError
 } from './actions';
 import { NgxsWebsocketExtensionModule } from './ngxs-websocket-extension.module';
-import { WebSocketOptions } from './other';
+import { WebSocketServiceConfig } from './other';
 
 type WebSocketMessage = string | Blob | ArrayBuffer | ArrayBufferView;
 
 describe('NgxsWebsocketExtension', () => {
-  beforeEach(() => {
-    (window as any).WebSocket = WebSocket;
-  });
-
-  const url = 'ws://localhost:8080';
-  const createModule = (options?: WebSocketOptions) => {
+  let mockWebSocketServer: Server;
+  let mockWebSocketServer2: Server;
+  const key1 = 'key1';
+  const key2 = 'key2';
+  const url1 = 'ws://localhost:8080';
+  const url2 = 'ws://localhost:8081';
+  const createModule = (options?: WebSocketServiceConfig) => {
     TestBed.configureTestingModule({
       imports: [
         NgxsModule.forRoot(),
         NgxsWebsocketExtensionModule.forRoot(options)
       ]
     });
-
-    return new Server(url);
   };
   const getStore = (): Store => TestBed.get(Store);
   const getActions$ = (): Actions => TestBed.get(Actions);
@@ -37,8 +36,19 @@ describe('NgxsWebsocketExtension', () => {
     constructor(public payload: string) {}
   }
 
+  beforeEach(() => {
+    (window as any).WebSocket = WebSocket;
+    mockWebSocketServer = new Server(url1);
+    mockWebSocketServer2 = new Server(url2);
+  });
+
+  afterEach(() => {
+    mockWebSocketServer.stop();
+    mockWebSocketServer2.stop();
+  });
+
   it('should connect websocket', done => {
-    const mockWebSocketServer = createModule({ url });
+    createModule();
     const store = getStore();
 
     mockWebSocketServer.on('connection', (socket: WebSocket) => {
@@ -46,11 +56,11 @@ describe('NgxsWebsocketExtension', () => {
       mockWebSocketServer.stop(done);
     });
 
-    store.dispatch(new ConnectWebSocket());
+    store.dispatch(new ConnectWebSocket(key1, url1));
   });
 
   it('should dispatch action received from websocket', done => {
-    const mockWebSocketServer = createModule({ url });
+    createModule();
     const store = getStore();
     const actions$ = getActions$();
 
@@ -65,24 +75,24 @@ describe('NgxsWebsocketExtension', () => {
 
     actions$.pipe(ofActionDispatched(WebSocketConnected)).subscribe(() =>
       store.dispatch(
-        new SendWebSocketMessage({
+        new SendWebSocketMessage(key1, {
           type: 'Example message',
           payload: 'No elo'
         })
       )
     );
 
-    store.dispatch(new ConnectWebSocket());
+    store.dispatch(new ConnectWebSocket(key1, url1));
   });
 
   it('should disconnect websocket on DisconnectWebSocket action', done => {
-    const mockWebSocketServer = createModule({ url });
+    createModule();
     const store = getStore();
     const actions$ = getActions$();
 
     actions$
       .pipe(ofActionDispatched(WebSocketConnected))
-      .subscribe(() => store.dispatch(new DisconnectWebSocket()));
+      .subscribe(() => store.dispatch(new DisconnectWebSocket(key1)));
 
     actions$
       .pipe(ofActionDispatched(WebSocketDisconnected))
@@ -91,11 +101,11 @@ describe('NgxsWebsocketExtension', () => {
         mockWebSocketServer.stop(done);
       });
 
-    store.dispatch(new ConnectWebSocket());
+    store.dispatch(new ConnectWebSocket(key1, url1));
   });
 
   it('should dispatch WebSocketDisconnected action when server closes the connection', done => {
-    const mockWebSocketServer = createModule({ url });
+    createModule();
     const store = getStore();
     const actions$ = getActions$();
 
@@ -108,11 +118,11 @@ describe('NgxsWebsocketExtension', () => {
         mockWebSocketServer.stop(done);
       });
 
-    store.dispatch(new ConnectWebSocket());
+    store.dispatch(new ConnectWebSocket(key1, url1));
   });
 
   it('should dispatch WebSocketError action when server errors', done => {
-    const mockWebSocketServer = createModule({ url });
+    createModule();
     const store = getStore();
     const actions$ = getActions$();
 
@@ -125,11 +135,11 @@ describe('NgxsWebsocketExtension', () => {
       mockWebSocketServer.stop(done);
     });
 
-    store.dispatch(new ConnectWebSocket());
+    store.dispatch(new ConnectWebSocket(key1, url1));
   });
 
-  it('should use options provided in module', done => {
-    const mockWebSocketServer = createModule({ url, serializer: () => '' });
+  it('should use config provided in module', done => {
+    createModule({ serializer: () => '' });
     const store = getStore();
     const actions$ = getActions$();
 
@@ -142,46 +152,18 @@ describe('NgxsWebsocketExtension', () => {
 
     actions$.pipe(ofActionDispatched(WebSocketConnected)).subscribe(() =>
       store.dispatch(
-        new SendWebSocketMessage({
+        new SendWebSocketMessage(key1, {
           type: 'Example message',
           payload: 'No elo'
         })
       )
     );
 
-    store.dispatch(new ConnectWebSocket());
-  });
-
-  it(`should use options provided in ConnectWebSocket action's options`, done => {
-    const mockWebSocketServer = createModule({ url, serializer: () => '' });
-    const store = getStore();
-    const actions$ = getActions$();
-
-    mockWebSocketServer.on('connection', (socket: WebSocket) => {
-      socket.on('message', (message: WebSocketMessage) => {
-        expect(message).toEqual('Serializer from ConnectWebSocket options');
-        mockWebSocketServer.stop(done);
-      });
-    });
-
-    actions$.pipe(ofActionDispatched(WebSocketConnected)).subscribe(() =>
-      store.dispatch(
-        new SendWebSocketMessage({
-          type: 'Example message',
-          payload: 'No elo'
-        })
-      )
-    );
-
-    store.dispatch(
-      new ConnectWebSocket({
-        serializer: () => 'Serializer from ConnectWebSocket options'
-      })
-    );
+    store.dispatch(new ConnectWebSocket(key1, url1));
   });
 
   it('should dispatch action received from websocket with custom typeKey', done => {
-    const mockWebSocketServer = createModule({ url, typeKey: 'xyz' });
+    createModule({ typeKey: 'xyz' });
     const store = getStore();
     const actions$ = getActions$();
 
@@ -197,13 +179,71 @@ describe('NgxsWebsocketExtension', () => {
 
     actions$.pipe(ofActionDispatched(WebSocketConnected)).subscribe(() =>
       store.dispatch(
-        new SendWebSocketMessage({
+        new SendWebSocketMessage(key1, {
           xyz: 'Example message',
           payload: 'No elo'
         })
       )
     );
 
-    store.dispatch(new ConnectWebSocket());
+    store.dispatch(new ConnectWebSocket(key1, url1));
+  });
+
+  it('should open 2 websocket connections', done => {
+    createModule();
+    const store = getStore();
+
+    mockWebSocketServer.on('connection', (socket: WebSocket) => {
+      expect(socket.readyState).toBe(1);
+      mockWebSocketServer.stop();
+    });
+    mockWebSocketServer2.on('connection', (socket: WebSocket) => {
+      expect(socket.readyState).toBe(1);
+      mockWebSocketServer.stop(done);
+    });
+
+    store.dispatch(new ConnectWebSocket(key1, url1)).subscribe(() => {
+      store.dispatch(new ConnectWebSocket(key2, url2));
+    });
+  });
+
+  it('should close given websocket on DisconnectWebSocket action and keep the other connection alive', done => {
+    createModule();
+    const store = getStore();
+    const actions$ = getActions$();
+
+    actions$.pipe(ofActionDispatched(WebSocketConnected)).subscribe(action => {
+      console.log(action.url);
+      if (action.key === key1) {
+        store.dispatch(new DisconnectWebSocket(action.key));
+      }
+    });
+
+    actions$
+      .pipe(ofActionDispatched(WebSocketDisconnected))
+      .subscribe(action => {
+        expect(action).toBeTruthy();
+        expect(action.key).toEqual(key1);
+        mockWebSocketServer.stop();
+        store.dispatch(
+          new SendWebSocketMessage(key2, {
+            type: 'Example message',
+            payload: 'Hello server 2!'
+          })
+        );
+      });
+
+    mockWebSocketServer2.on('connection', (socket: WebSocket) => {
+      socket.on('message', (message: WebSocketMessage) => {
+        expect(message).toEqual(
+          '{"type":"Example message","payload":"Hello server 2!"}'
+        );
+        mockWebSocketServer2.stop(done);
+      });
+    });
+
+    store.dispatch(new ConnectWebSocket(key1, url1)).subscribe(() => {
+      store.dispatch(new ConnectWebSocket(key2, url2));
+    });
   });
 });

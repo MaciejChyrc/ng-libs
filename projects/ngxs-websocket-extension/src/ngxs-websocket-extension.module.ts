@@ -5,12 +5,12 @@ import {
   NgModule
 } from '@angular/core';
 import { NgxsModule } from '@ngxs/store';
-import { NGXS_WEBSOCKET_OPTIONS, noop, WebSocketOptions } from './other';
+import { NGXS_WEBSOCKET_CONFIG, noop, WebSocketServiceConfig } from './other';
 import { WebSocketClient } from './websocket-client';
 
-export function websocketOptionsFactory(
-  options: WebSocketOptions
-): WebSocketOptions {
+export function websocketConfigFactory(
+  options: WebSocketServiceConfig
+): WebSocketServiceConfig {
   return {
     typeKey: 'type',
     serializer(value: any) {
@@ -30,7 +30,7 @@ export const USER_OPTIONS = new InjectionToken('USER_OPTIONS');
   exports: []
 })
 export class NgxsWebsocketExtensionModule {
-  static forRoot(options?: WebSocketOptions): ModuleWithProviders {
+  static forRoot(options?: WebSocketServiceConfig): ModuleWithProviders {
     return {
       ngModule: NgxsWebsocketExtensionModule,
       providers: [
@@ -40,8 +40,8 @@ export class NgxsWebsocketExtensionModule {
           useValue: options
         },
         {
-          provide: NGXS_WEBSOCKET_OPTIONS,
-          useFactory: websocketOptionsFactory,
+          provide: NGXS_WEBSOCKET_CONFIG,
+          useFactory: websocketConfigFactory,
           deps: [USER_OPTIONS]
         },
         {

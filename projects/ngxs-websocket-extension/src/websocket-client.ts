@@ -8,60 +8,68 @@ import {
   WebSocketDisconnected,
   WebSocketError
 } from './actions';
-import { NGXS_WEBSOCKET_OPTIONS, WebSocketOptions } from './other';
+import {
+  NGXS_WEBSOCKET_CONFIG,
+  WebSocketOptions,
+  WebSocketServiceConfig
+} from './other';
 
 @Injectable()
 export class WebSocketClient {
-  private webSocket: WebSocket;
-  private config: WebSocketOptions;
+  private webSocketMap: Map<string, WebSocket>;
 
   constructor(
     private store: Store,
     private actions$: Actions,
-    @Inject(NGXS_WEBSOCKET_OPTIONS) private options: WebSocketOptions
+    @Inject(NGXS_WEBSOCKET_CONFIG) private config: WebSocketServiceConfig
   ) {
-    this.config = options;
+    this.webSocketMap = new Map<string, WebSocket>();
     this.setupActionListeners();
   }
 
   private setupActionListeners = () => {
     this.actions$
       .pipe(ofActionDispatched(ConnectWebSocket))
-      .subscribe(({ options }) => {
+      .subscribe(({ key, url, options }) => {
         try {
-          this.connect(options);
+          this.connect(key, url, options);
         } catch (error) {
           console.error(error);
-          this.dispatchDisconnectedAndFinalizeSocket(false);
+          this.dispatchDisconnectedAndFinalizeSocket(key, false);
         }
       });
 
     this.actions$
       .pipe(ofActionDispatched(SendWebSocketMessage))
-      .subscribe(({ payload }) => {
+      .subscribe(({ key, payload }) => {
         try {
-          this.send(payload);
+          this.send(key, payload);
         } catch (error) {
           console.error(error);
         }
       });
 
-    this.actions$.pipe(ofActionDispatched(DisconnectWebSocket)).subscribe(_ => {
-      try {
-        this.disconnect();
-      } catch (error) {
-        console.error(error);
-      }
-    });
+    this.actions$
+      .pipe(ofActionDispatched(DisconnectWebSocket))
+      .subscribe(({ key }) => {
+        try {
+          this.disconnect(key);
+        } catch (error) {
+          console.error(error);
+        }
+      });
   }
 
-  private setupWebSocketEventListeners = () => {
-    if (this.webSocket) {
-      this.webSocket.addEventListener('open', () => {
-        this.store.dispatch(new WebSocketConnected());
+  private setupWebSocketEventListeners = (
+    key: string,
+    webSocket: WebSocket
+  ) => {
+    if (webSocket) {
+      webSocket.addEventListener('open', () => {
+        this.store.dispatch(new WebSocketConnected(key, webSocket.url));
       });
 
-      this.webSocket.addEventListener('message', event => {
+      webSocket.addEventListener('message', event => {
         const message = this.config.deserializer(event);
 
         if (message) {
@@ -76,15 +84,16 @@ export class WebSocketClient {
         }
       });
 
-      this.webSocket.addEventListener('close', event => {
+      webSocket.addEventListener('close', event => {
         this.dispatchDisconnectedAndFinalizeSocket(
+          key,
           event.wasClean,
           event.code,
           event.reason
         );
       });
 
-      this.webSocket.addEventListener('error', () => {
+      webSocket.addEventListener('error', () => {
         this.store.dispatch(new WebSocketError());
       });
     } else {
@@ -92,47 +101,52 @@ export class WebSocketClient {
     }
   }
 
-  private connect(options?: WebSocketOptions) {
-    if (options) {
-      this.config = { ...this.options, ...options };
-    }
-
-    this.webSocket = new WebSocket(this.config.url, this.config.protocol);
-    this.setupWebSocketEventListeners();
+  private connect(key: string, url: string, options?: WebSocketOptions) {
+    const webSocket = new WebSocket(
+      url,
+      options ? options.protocols : undefined
+    );
+    this.webSocketMap.set(key, webSocket);
+    this.setupWebSocketEventListeners(key, webSocket);
   }
 
-  private send(message: any) {
-    if (
-      !this.webSocket ||
-      (this.webSocket && this.webSocket.readyState !== 1)
-    ) {
+  private send(key: string, message: any) {
+    const webSocket = this.webSocketMap.get(key);
+
+    if (!webSocket || (webSocket && webSocket.readyState !== 1)) {
       throw new Error('You must connect before you send a message');
     }
 
-    this.webSocket.send(this.config.serializer(message));
+    webSocket.send(this.config.serializer(message));
   }
 
-  private disconnect() {
-    if (this.webSocket && this.webSocket.readyState === 1) {
-      this.webSocket.close();
+  private disconnect(key: string) {
+    const webSocket = this.webSocketMap.get(key);
+
+    if (webSocket && webSocket.readyState === 1) {
+      webSocket.close();
     } else {
       throw new Error('There is no open websocket connection');
     }
   }
 
   private dispatchDisconnectedAndFinalizeSocket(
+    key: string,
     clean: boolean,
     code?: number,
     reason?: string
   ) {
+    let webSocket = this.webSocketMap.get(key);
+
     this.store.dispatch(
-      new WebSocketDisconnected({
+      new WebSocketDisconnected(key, webSocket.url, {
         clean,
         code,
         reason
       })
     );
 
-    this.webSocket = null;
+    webSocket = null;
+    this.webSocketMap.delete(key);
   }
 }

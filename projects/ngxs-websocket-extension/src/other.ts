@@ -1,16 +1,17 @@
 import { InjectionToken } from '@angular/core';
 
-export interface WebSocketOptions {
-  url?: string;
-  protocol?: string;
+export interface WebSocketServiceConfig {
   typeKey?: string;
-  binaryType?: string;
   serializer?: (payload: any) => string;
   deserializer?: (e: MessageEvent) => any;
 }
 
-export const NGXS_WEBSOCKET_OPTIONS = new InjectionToken(
-  'NGXS_WEBSOCKET_OPTIONS'
+export interface WebSocketOptions {
+  protocols?: string | string[];
+}
+
+export const NGXS_WEBSOCKET_CONFIG = new InjectionToken(
+  'NGXS_WEBSOCKET_CONFIG'
 );
 
 export interface WebSocketDisconnectInfo {
