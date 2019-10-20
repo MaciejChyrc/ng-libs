@@ -102,6 +102,15 @@ export class WebSocketClient {
   }
 
   private connect(key: string, url: string, options?: WebSocketOptions) {
+    if (this.webSocketMap.has(key)) {
+      this.dispatchDisconnectedAndFinalizeSocket(
+        key,
+        true,
+        undefined,
+        `Opened new connection under key: ${key}. Existing connection closed.`
+      );
+    }
+
     const webSocket = new WebSocket(
       url,
       options ? options.protocols : undefined
