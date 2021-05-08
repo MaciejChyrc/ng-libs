@@ -45,7 +45,7 @@
     "karma-jasmine-html-reporter": "1.4.2",
     "karma-mocha-reporter": "2.2.5",
     "mock-socket": "9.0.0",
-    "ng-packagr": "5.5.0",
+    "ng-packagr": "10.1.1",
     "protractor": "5.4.2",
     "ts-node": "8.3.0",
     "tsickle": "0.37.0",
